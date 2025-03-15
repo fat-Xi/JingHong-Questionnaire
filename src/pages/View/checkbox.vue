@@ -20,7 +20,7 @@
     <div class="flex-col p-5 h-auto">
       <span v-if="props.minimum_option !== 0" class="dark:opacity-80 text-gray-700 dark:text-gray-400 text-sm my-5">最少选 {{ props.minimum_option }} 个&ensp;</span>
       <span v-if="props.maximum_option !== 0" class="dark:opacity-80 text-gray-700 dark:text-gray-400 text-sm my-5">最多选 {{ props.maximum_option }} 个</span>
-      <div v-for="item in localOptions" :key="item.serial_num" class="flex items-center gap-10 my-5">
+      <div v-for="item in localOptions" :key="item.serial_num" class="flex items-center gap-10 my-2">
         <el-checkbox
           v-model="answerArr"
           :name="props.serial_num"
