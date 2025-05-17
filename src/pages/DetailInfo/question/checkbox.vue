@@ -9,7 +9,8 @@
             v-model="localTitle"
             type="text"
             placeholder="Question"
-            class="rounded-none focus:outline-none dark:bg-customGray_more_shallow input input-bordered shadow-md w-350"
+            :class="['rounded-none focus:outline-none dark:bg-customGray_more_shallow input input-bordered shadow-md w-350', quesError[serialNum]? 'border-red-500 border-2' : '']"
+            @blur="validataQuestion(localTitle, serialNum)"
           >
           <div v-else class="w-350">
             {{ localTitle }}
@@ -25,8 +26,9 @@
           <input
             v-model="item.content"
             type="text"
-            class="rounded-none focus:outline-none dark:bg-customGray_more_shallow input input-bordered h-40 shadow-md"
+            :class="['rounded-none focus:outline-none dark:bg-customGray_more_shallow input input-bordered h-40 shadow-md', optionError[item.serialNum] ? 'border-red-500 border-1' : '']"
             placeholder="option"
+            @blur="validataOptions(item.content, item.serialNum)"
           >
           <div class="ml-10 flex items-center gap-20">
             <div v-if="item.img" class="mt-4">
@@ -62,6 +64,7 @@ import { ref, watch, defineProps, defineEmits } from "vue";
 import { useRequest } from "vue-hooks-plus";
 import { saveImgAPI } from "@/apis";
 import { ElNotification } from "element-plus";
+import { validataQuestion, quesError, validataOptionsList, validataOptions, optionError } from "@/utilities/addQuesValidata.ts";
 
 const props = defineProps<{
   isActive: boolean,
@@ -89,7 +92,7 @@ const localOptionChoose = ref<boolean>(props.optionChoose);
 const localUnique = ref<boolean>(props.unique);
 const localOtherOption = ref<boolean>(props.otherOption);
 const localDescribe = ref<string>(props.describe || "");
-const localOptions = ref(props.options);
+const localOptions = ref(props.options ? props.options.map(item => ({ ...item, error: false })) : []);
 const localMax = ref(props.maximum_option);
 const localMin = ref(props.minimum_option);
 
@@ -113,12 +116,17 @@ const handleFileChange = async (event, serialNum: number) => {
 };
 
 const deleteOption = (serialNum: number) => {
-  localOptions.value = localOptions.value.filter(item => item.serialNum !== serialNum);
-  localOptions.value.forEach((item) => {
-    if (item.serialNum > serialNum) {
-      item.serialNum -= 1;
-    }
-  });
+  if (!validataOptionsList(localOptions.value)) {
+    ElNotification.error("不能没有选项");
+    return;
+  } else {
+    localOptions.value = localOptions.value.filter(item => item.serialNum !== serialNum);
+    localOptions.value.forEach((item) => {
+      if (item.serialNum > serialNum) {
+        item.serialNum -= 1;
+      }
+    });
+  }
   emits("update:options", localOptions.value);
 };
 
@@ -179,7 +187,3 @@ watch(localOptions, (newOptions) => {
 });
 
 </script>
-
-<style scoped>
-
-</style>

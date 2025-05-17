@@ -9,7 +9,8 @@
             v-model="localTitle"
             type="text"
             placeholder="Question"
-            class="dark:bg-customGray_more_shallow input rounded-none h-40  focus:outline-none  w-350"
+            :class="['dark:bg-customGray_more_shallow input rounded-none h-40  focus:outline-none  w-350', quesError[serialNum] ? 'border-red-500 border-2' : '']"
+            @blur="validataQuestion(localTitle, serialNum)"
           >
           <div v-else>
             {{ localTitle }}
@@ -20,12 +21,13 @@
     <div class="divider" />
     <div ref="scrollContainer" class="flex-col p-5 overflow-y-auto h-180 mt-10" style="scroll-behavior: smooth;">
       <div v-for="item in localOptions" :key="item.serialNum" class="flex items-center gap-10 my-5">
-        <input type="radio" :name="props.serialNum" class="radio-sm my-5">
         <input
           v-model="item.content"
           type="text"
           class="dark:bg-customGray_more_shallow input input-bordered h-40 shadow-md rounded-none focus:outline-none"
           placeholder="option"
+          :class="['dark:bg-customGray_more_shallow input input-bordered h-40 shadow-md rounded-none focus:outline-none']"
+          @blur="validataOptions(item.content, item.serialNum)"
         >
         <div class="ml-10 flex items-center gap-20">
           <div v-if="item.img" class="mt-4">
@@ -60,6 +62,7 @@ import { ref, watch, defineProps, defineEmits } from "vue";
 import { useRequest } from "vue-hooks-plus";
 import { saveImgAPI } from "@/apis";
 import { ElNotification } from "element-plus";
+import { validataQuestion, quesError, validataOptionsList, validataOptions, optionError } from "@/utilities/addQuesValidata.ts";
 
 const props = defineProps<{
   isActive: boolean,
@@ -84,7 +87,7 @@ const localDescribe = ref<string>(props.describe || "");
 const localOptionChoose = ref<boolean>(props.optionChoose);
 const localUnique = ref<boolean>(props.unique);
 const localOtherOption = ref<boolean>(props.otherOption);
-const localOptions = ref(props.options ? [...props.options] : []);
+const localOptions = ref(props.options ? props.options.map(item => ({ ...item, error: false })) : []);
 
 const handleFileChange = async (event, serialNum: number) => {
   const file = event.target.files[0];
@@ -106,12 +109,17 @@ const handleFileChange = async (event, serialNum: number) => {
 };
 
 const deleteOption = (serialNum: number) => {
-  localOptions.value = localOptions.value.filter(item => item.serialNum !== serialNum);
-  localOptions.value.forEach((item) => {
-    if (item.serialNum > serialNum) {
-      item.serialNum -= 1;
-    }
-  });
+  if (!validataOptionsList(localOptions.value)) {
+    ElNotification.error("不能没有选项");
+    return;
+  } else {
+    localOptions.value = localOptions.value.filter(item => item.serialNum !== serialNum);
+    localOptions.value.forEach((item) => {
+      if (item.serialNum > serialNum) {
+        item.serialNum -= 1;
+      }
+    });
+  }
 };
 
 // Watchers to sync local state with props
@@ -163,8 +171,4 @@ watch(localOtherOption, (newOtherOption) => {
 watch(localOptions, (newOptions) => {
   emits("update:options", newOptions);
 });
-
 </script>
-
-<style scoped>
-</style>
